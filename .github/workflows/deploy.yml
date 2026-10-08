@@ -39,6 +39,7 @@ jobs:
           docker build --platform linux/amd64 ${{ matrix.build-args }} \
           -t ${{ secrets.DOCKER_USER }}/todo-${{ matrix.service }}:sha-${{ github.sha }} \
           -t ${{ secrets.DOCKER_USER }}/todo-${{ matrix.service }}:latest \
+          ./
  
       - name: Push image (${{ matrix.service }}) to Docker Hub
         working-directory: ${{ matrix.service }}
