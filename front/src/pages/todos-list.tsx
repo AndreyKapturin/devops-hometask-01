@@ -41,6 +41,7 @@ export function TodosListPage() {
 
   return (
     <div className="space-y-6">
+      <p>Моя фича</p>
       <form
         onSubmit={onSubmit}
         className="flex items-start gap-2"
