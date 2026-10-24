@@ -20,7 +20,7 @@ jobs:
             build-args: ""
 
           - service: front
-            build-args: "--build-arg VITE_API_URL=${{ vars.BACKEND_SERVICE_NAME }}"
+            build-args: "--build-arg VITE_API_URL=${{ vars.BACKEND_SERVICE_URL }}"
     steps:
       - name: Login in Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASS }}
