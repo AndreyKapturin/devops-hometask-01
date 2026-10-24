@@ -5,5 +5,5 @@ metadata:
 data:
   app.json: |
     {
-      "maxTodos": 5,
+      "maxTodos": 5
     }
