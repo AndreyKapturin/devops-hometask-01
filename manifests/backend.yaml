@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ${BACKEND_IMAGE}
+          image: andreykapturin/todo-back:latest
           env:
             - name: PORT
               valueFrom:

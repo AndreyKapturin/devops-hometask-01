@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: backend-app-config
 data:
-  appConfig.json: |
+  app.json: |
     {
       "maxTodos": 5,
     }
