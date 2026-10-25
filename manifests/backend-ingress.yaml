@@ -4,10 +4,17 @@ metadata:
   name: backend-ingress
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-body-size: '10m'
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - andreykapturin.site
+      secretName: andreykapturin-site-tls
   rules:
-    - http:
+    - host: andreykapturin.site
+      http:
         paths:
           - path: /api(/|$)(.*)
             pathType: ImplementationSpecific
