@@ -8,7 +8,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: backend
+      name: backend-service
   endpoints:
     - port: http      # имя порта из Service
       path: /metrics
