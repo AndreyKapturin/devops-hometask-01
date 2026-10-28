@@ -60,6 +60,19 @@ spec:
                   name: app-secrets
           ports:
             - containerPort: 3000
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            failureThreshold: 12
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 15
+            failureThreshold: 3
           volumeMounts:
             - name: app-config
               mountPath: /app/config
