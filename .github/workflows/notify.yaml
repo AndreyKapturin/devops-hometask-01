@@ -1,0 +1,58 @@
+name: Notify Telegram
+
+on:
+  workflow_call:
+    inputs:
+      results:
+        description: 'JSON со статусами джоб: {"checks": "success", "build": "failure"}'
+        required: true
+        type: string
+      version:
+        description: 'Версия (sha или тег)'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      TG_BOT_TOKEN:
+        required: true
+      TG_CHAT_ID:
+        required: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram notification
+        env:
+          RESULTS: ${{ inputs.results }}
+          VERSION: ${{ inputs.version }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          # Находим первый упавший джоб (игнорируем success и skipped)
+          FAILED_JOB=$(echo "$RESULTS" | jq -r 'to_entries | map(select(.value != "success" and .value != "skipped")) | .[0].key // empty')
+
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          HEADER="${{ github.repository }} @ ${{ github.ref_name }}"
+          
+          VERSION_LINE=""
+          if [ -n "$VERSION" ]; then
+            VERSION_LINE="%0AVersion: $VERSION"
+          fi
+
+          if [ -z "$FAILED_JOB" ]; then
+            # Если упавших нет
+            TEXT="✅ Деплой успешен%0A$HEADER$VERSION_LINE%0AActor: ${{ github.actor }}%0A$RUN_URL"
+          else
+            # Если есть упавший джоб
+            TEXT="❌ Упал шаг: $FAILED_JOB%0A$HEADER$VERSION_LINE%0A$RUN_URL"
+          fi
+
+          RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TG_CHAT_ID}" \
+            -d "text=$TEXT" \
+            -d "disable_web_page_preview=true")
+
+          echo "$RESPONSE"
+          # Проверяем, что Telegram ответил ok:true
+          echo "$RESPONSE" | grep -q '"ok":true' || { echo "Telegram API rejected"; exit 1; }
