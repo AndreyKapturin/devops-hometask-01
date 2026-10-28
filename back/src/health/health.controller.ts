@@ -1,5 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
+import { readAppConfig } from 'src/todos/todos.service';
 
 // Health-эндпоинт для hw4: smoke-проверка и AI-агент сверяют version
 // с APP_VERSION на сервере. Подкручен из env-переменной APP_VERSION,
@@ -10,11 +11,14 @@ import { ApiExcludeController } from '@nestjs/swagger';
 @Controller('health')
 export class HealthController {
   @Get()
-  getHealth(): { status: 'ok'; version: string } {
-    return {
-      status: 'ok',
-      version: process.env.APP_VERSION ?? 'unknown',
-    };
+  getHealth(): { status: 'ok' } {
+    const { health } = readAppConfig();
+    if (health) {
+      return {
+        status: 'ok',
+      };
+    }
+    throw new ServiceUnavailableException('app unavailable');
   }
   @Get('/ready')
   isReady(): { status: 'ok' } {

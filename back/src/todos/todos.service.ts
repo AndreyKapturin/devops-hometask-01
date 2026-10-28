@@ -15,9 +15,10 @@ const APP_CONFIG_PATH = '/app/config/app.json';
 
 interface AppConfig {
   maxTodos: number;
+  health: boolean;
 }
 
-function readAppConfig(): AppConfig {
+export function readAppConfig(): AppConfig {
   let raw: string;
   try {
     raw = readFileSync(APP_CONFIG_PATH, 'utf8');
@@ -40,7 +41,13 @@ function readAppConfig(): AppConfig {
       `Runtime config at ${APP_CONFIG_PATH} must contain numeric "maxTodos" >= 0`,
     );
   }
-  return { maxTodos: max };
+  const health = (parsed as { health?: unknown })?.health;
+  if (typeof health !== 'boolean') {
+    throw new InternalServerErrorException(
+      `Runtime config at ${APP_CONFIG_PATH} must contain boolean "health" (true/false)`,
+    );
+  }
+  return { maxTodos: max, health };
 }
 
 @Injectable()

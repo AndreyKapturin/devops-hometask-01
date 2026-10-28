@@ -9,4 +9,5 @@ data:
   appConfig.json: |
     {
       "maxTodos": 5,
+      "health": true
     }
