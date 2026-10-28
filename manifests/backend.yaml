@@ -73,6 +73,13 @@ spec:
             initialDelaySeconds: 0
             periodSeconds: 15
             failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready-missing
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 15
+            failureThreshold: 3
           volumeMounts:
             - name: app-config
               mountPath: /app/config

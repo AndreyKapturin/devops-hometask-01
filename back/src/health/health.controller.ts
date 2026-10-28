@@ -16,4 +16,10 @@ export class HealthController {
       version: process.env.APP_VERSION ?? 'unknown',
     };
   }
+  @Get('/ready')
+  isReady(): { status: 'ok' } {
+    return {
+      status: 'ok',
+    };
+  }
 }
