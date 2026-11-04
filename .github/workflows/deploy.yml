@@ -54,6 +54,7 @@ jobs:
           helm upgrade backend ./helm/backend \
             --reuse-values \
             --set image.tag="$IMAGE_TAG" \
+            --set config.envs.APP_VERSION="$IMAGE_TAG" \
             --wait \
             --timeout 4m
 
