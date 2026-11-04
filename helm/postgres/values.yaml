@@ -1,0 +1,2 @@
+image: postgres:16-alpine
+storage: 1Gi

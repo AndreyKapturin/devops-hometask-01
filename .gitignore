@@ -17,3 +17,4 @@ k8s/secret.yaml
 k8s/dockerhub-secret.yaml
 kubeconfig
 *.kubeconfig
+helm/*/secrets.yaml
