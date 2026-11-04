@@ -49,7 +49,7 @@ jobs:
   
       - name: Deploy with Helm
         env:
-          IMAGE_TAG: ${{ needs.build.outputs.image_sha }}
+          IMAGE_TAG: sha-${{ github.sha }}
         run: |
           helm upgrade backend ./helm/backend \
             --reuse-values \
