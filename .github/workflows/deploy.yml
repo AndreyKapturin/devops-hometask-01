@@ -16,6 +16,7 @@ jobs:
       gitops_repo: andreykapturin/todos-argocd
       argocd_app_name: backend
       argocd_server: ${{ vars.ARGOCD_SERVER_KUBER }}
+      app_version: "sha-${{ github.sha }}"
     secrets: 
       gitops_token: ${{ secrets.GITOPS_TOKEN_KUBER }}
       argocd_auth_token: ${{ secrets.ARGOCD_AUTH_TOKEN_KUBER }}
