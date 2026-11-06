@@ -33,30 +33,18 @@ jobs:
 
   deploy:
     needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-  
-      - name: Configure kubectl
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_KUBER }}
-        run: |
-          mkdir -p ~/.kube
-          echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
-  
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-  
-      - name: Deploy with Helm
-        env:
-          IMAGE_TAG: sha-${{ github.sha }}
-        run: |
-          helm upgrade backend ./helm/backend \
-            --reuse-values \
-            --set image.tag="$IMAGE_TAG" \
-            --set config.envs.APP_VERSION="$IMAGE_TAG" \
-            --wait \
-            --timeout 4m
+    uses: ./.github/workflows/deploy-argocd.yml
+    with:
+      helm_path: helm/backend/values.yaml
+      image_repository: andreykapturin/todo-back
+      image_tag: sha-${{ github.sha }}
+      branch: master
+      gitops_repo: andreykapturin/todos-argocd
+      argocd_app_name: backend
+      argocd_server: https://argocd.andreykapturin.site
+    secrets: 
+      gitops_token: ${{ secrets.GITOPS_TOKEN_KUBER }}
+      argocd_auth_token: ${{ secrets.ARGOCD_AUTH_TOKEN_KUBER }}
 
   notify:
     needs: [checks, build, deploy]
