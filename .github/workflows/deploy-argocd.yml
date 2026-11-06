@@ -71,7 +71,7 @@ jobs:
           BRANCH_NAME="update-image-${{ github.run_id }}"
           git checkout -b "$BRANCH_NAME"
           git add "${{ inputs.helm_path }}"
-          git commit -m "feat(${{ inputs.argocd_app_name }}): update image to ${{ inputs.image_name }}"
+          git commit -m "feat(${{ inputs.argocd_app_name }}): update image to ${{ inputs.image_repository }}:${{ inputs.image_tag}}"
           git push origin "$BRANCH_NAME"
  
       - name: Create and merge Pull Request
@@ -81,7 +81,7 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${{ inputs.gitops_repo }}/pulls \
             -d "{
-              \"title\": \"[${{ inputs.argocd_app_name }}] Update image to ${{ inputs.image_name }}\",
+              \"title\": \"[${{ inputs.argocd_app_name }}] Update image to ${{ inputs.image_repository }}:${{ inputs.image_tag}}\",
               \"body\": \"Automated update of image tag.\",
               \"head\": \"update-image-${{ github.run_id }}\",
               \"base\": \"${{ inputs.branch }}\"
