@@ -29,10 +29,6 @@ on:
         description: Адрес ArgoCD сервера
         type: string
         required: true
-      app_version:
-        description: Переменная окружения APP_VERSION
-        type: string
-        required: true
     secrets:
       gitops_token:
         description: GitHub Token с правом на запись в gitops-репо
@@ -66,7 +62,7 @@ jobs:
           cd gitops-repo
           yq e -i ".image.repository = \"${{ inputs.image_repository }}\"" "${{ inputs.helm_path }}"
           yq e -i ".image.tag = \"${{ inputs.image_tag }}\"" "${{ inputs.helm_path }}"
-          yq e -i ".envs.APP_VERSION = \"${{ inputs.app_version }}\"" "${{ inputs.helm_path }}"
+          yq e -i ".envs.APP_VERSION = \"${{ inputs.image_tag }}\"" "${{ inputs.helm_path }}"
  
       - name: Commit and push to new branch
         run: |
