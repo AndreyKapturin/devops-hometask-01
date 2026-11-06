@@ -5,6 +5,10 @@ on:
     branches: [helm]
 
 jobs:
+  security-scan:
+    name: Security scan
+    uses: ./.github/workflows/sast-sca.yml
+  
   checks:
     uses: ./.github/workflows/typecheck.yaml
 
