@@ -86,8 +86,16 @@ jobs:
               \"head\": \"update-image-${{ github.run_id }}\",
               \"base\": \"${{ inputs.branch }}\"
             }")
- 
-          PR_NUMBER=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['number'])")
+
+          echo "GitHub API response:"
+          echo "$response" | jq .
+
+          PR_NUMBER=$(echo "$response" | jq -r '.number // empty')
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::Failed to create Pull Request"
+            exit 1
+          fi
  
           curl -sX PUT \
             -H "Authorization: Bearer ${{ secrets.gitops_token }}" \
