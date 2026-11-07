@@ -9,3 +9,59 @@ jobs:
     name: Security scan
     uses: ./.github/workflows/sast-sca.yml
   
+  checks:
+    uses: ./.github/workflows/typecheck.yaml
+
+  build:
+    needs: [checks]
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.bp.outputs.image }}
+      version: ${{ steps.bp.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+      - name: Build and push backend
+        id: bp
+        run: |
+          IMAGE=${{ vars.DOCKER_USER }}/todo-back:sha-${{ github.sha }}
+          docker build --platform linux/amd64 -t $IMAGE -t ${{ vars.DOCKER_USER }}/todo-back:latest back
+          docker push $IMAGE
+          docker push ${{ vars.DOCKER_USER }}/todo-back:latest
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          echo "version=sha-${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: [build]
+    uses: ./.github/workflows/deploy-argocd.yml
+    with:
+      helm_path: helm/backend/values.yaml
+      image_repository: andreykapturin/todo-back
+      image_tag: sha-${{ github.sha }}
+      branch: master
+      gitops_repo: andreykapturin/todos-argocd
+      argocd_app_name: backend
+      argocd_server: ${{ vars.ARGOCD_SERVER_KUBER }}
+    secrets: 
+      gitops_token: ${{ secrets.GITOPS_TOKEN_KUBER }}
+      argocd_auth_token: ${{ secrets.ARGOCD_AUTH_TOKEN_KUBER }}
+
+  notify:
+    needs: [checks, build, deploy]
+    if: always()
+    uses: ./.github/workflows/notify.yaml
+    with:
+      results: |
+        {
+          "checks": "${{ needs.checks.result }}",
+          "build":  "${{ needs.build.result }}",
+          "deploy": "${{ needs.deploy.result }}"
+        }
+      version: "sha-${{ github.sha }}"
+    secrets:
+      TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
