@@ -53,4 +53,5 @@ jobs:
             --exclude=teacher_authorized_key.pub \
             --exclude=monitoring \
             --exclude=kubernetes \
+            --exclude=.github/workflows \
             .
