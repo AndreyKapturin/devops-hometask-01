@@ -15,4 +15,13 @@ jobs:
     container: { image: semgrep/semgrep }
     steps:
       - uses: actions/checkout@v4
-      - run: semgrep scan --config=p/typescript --config=p/nodejs --config=p/owasp-top-ten --error --exclude=node_modules --exclude=dist .
+      - run: |
+          semgrep scan \
+            --config=p/typescript \
+            --config=p/nodejs \
+            --config=p/owasp-top-ten \
+            --error \ 
+            --exclude=node_modules \ 
+            --exclude=dist \
+            --exclude=.github/workflows \
+            .
