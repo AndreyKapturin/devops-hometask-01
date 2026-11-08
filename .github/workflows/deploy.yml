@@ -8,7 +8,11 @@ env:
   IMAGE_TAG: sha-${{ github.sha }}
  
 jobs:
+  security-scan:
+    uses: ./.github/workflows/sast-sca.yml
+
   build:
+    needs: [security-scan]
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ env.IMAGE_TAG }}
@@ -82,3 +86,19 @@ jobs:
           sudo chmod +x /usr/local/bin/argocd
           argocd app sync myapp --grpc-web
           argocd app wait myapp --grpc-web --timeout 300
+
+  notify:
+    needs: [security-scan, build, deploy]
+    if: always()
+    uses: ./.github/workflows/notify.yaml
+    with:
+      results: |
+        {
+          "checks": "${{ needs.security-scan.result }}",
+          "build":  "${{ needs.build.result }}",
+          "deploy": "${{ needs.deploy.result }}"
+        }
+      version: "sha-${{ github.sha }}"
+    secrets:
+      TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
