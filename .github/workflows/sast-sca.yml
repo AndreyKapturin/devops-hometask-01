@@ -20,8 +20,8 @@ jobs:
             --config=p/typescript \
             --config=p/nodejs \
             --config=p/owasp-top-ten \
-            --error \ 
-            --exclude=node_modules \ 
+            --error \
+            --exclude=node_modules \
             --exclude=dist \
             --exclude=.github/workflows \
             .
