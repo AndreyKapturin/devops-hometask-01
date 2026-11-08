@@ -1,0 +1,9 @@
+name: Security
+ 
+on:
+  push:
+    branches: [security]
+ 
+jobs:
+  security-scan:
+    uses: ./.github/workflows/sast-sca.yml
