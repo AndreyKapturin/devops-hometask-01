@@ -1,0 +1,6 @@
+dependencies:
+- name: common-chart
+  repository: oci://ghcr.io/andreykapturin
+  version: 0.2.0
+digest: sha256:790f21959aa68b94b8ebb6f68395d8676f02d26b8eb3459aab9195e24044bef5
+generated: "2026-11-20T18:01:53.815149+07:00"

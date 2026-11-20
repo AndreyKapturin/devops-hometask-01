@@ -1,0 +1,8 @@
+# SOPS читает этот файл автоматически. Все secrets*.yaml внутри helm/ шифруются
+# твоим age-публичным ключом.
+#
+# ЗАПОЛНИ: замени плейсхолдер на СВОЙ публичный ключ из вывода age-keygen
+# (строка вида age1...). Приватный ключ (age-key.txt) НИКОГДА не коммить.
+creation_rules:
+  - path_regex: helm/.*/secrets.*\.yaml$
+    age: age14vjhfnlncd4ql7km6xym6erl4dv2g5wcdnnvw0td4jzg969u3cwsw2umyp
