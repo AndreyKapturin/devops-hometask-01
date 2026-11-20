@@ -17,3 +17,13 @@ k8s/secret.yaml
 k8s/dockerhub-secret.yaml
 kubeconfig
 *.kubeconfig
+age-key.txt
+helm/*/charts/
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
