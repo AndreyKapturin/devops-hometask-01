@@ -1,8 +1,8 @@
-name: CI/CD (GitOps)
+name: CI/CD (AWS)
  
 on:
   push:
-    branches: [week*]
+    branches: [aws]
  
 env:
   IMAGE_TAG: sha-${{ github.sha }}
@@ -14,78 +14,72 @@ jobs:
   build:
     needs: [security-scan]
     runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ env.IMAGE_TAG }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASS }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Вход в ECR
+        run: |
+          aws ecr get-login-password --region ${{ vars.AWS_REGION }} | \
+            docker login --username AWS --password-stdin \
+            ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+
       - name: Build & push backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./back
-          push: true
-          tags: ${{ secrets.DOCKER_USER }}/todo-back:${{ env.IMAGE_TAG }}
+        env:
+          IMAGE_SHA: ${{ vars.AWS_ECR_BACKEND_REPO }}:${{ env.IMAGE_TAG }}
+          IMAGE_LATEST: ${{ vars.AWS_ECR_BACKEND_REPO }}:latest
+        run: |
+          docker build -t $IMAGE_SHA -t $IMAGE_LATEST ./back
+          docker push $IMAGE_SHA
+          docker push $IMAGE_LATEST
+
       - name: Build & push frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./front
-          push: true
-          build-args: VITE_API_URL=${{ vars.VITE_API_URL }}
-          tags: ${{ secrets.DOCKER_USER }}/todo-front:${{ env.IMAGE_TAG }}
+        env:
+          IMAGE_SHA: ${{ vars.AWS_ECR_FRONTEND_REPO }}:${{ env.IMAGE_TAG }}
+          IMAGE_LATEST: ${{ vars.AWS_ECR_FRONTEND_REPO }}:latest
+        run: |
+          docker build --build-arg VITE_API_URL=${{ vars.AWS_VITE_API_URL }} -t $IMAGE_SHA -t $IMAGE_LATEST ./front
+          docker push $IMAGE_SHA
+          docker push $IMAGE_LATEST
  
   deploy:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout gitops repo
+      - name: Checkout repo
         uses: actions/checkout@v4
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          repository: ${{ github.repository_owner }}/devops-gitops
-          token: ${{ secrets.GITOPS_TOKEN }}
-          ref: main
-          path: gitops
- 
-      - name: Install yq
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Configure kubectl
         run: |
-          sudo curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
-          sudo chmod +x /usr/local/bin/yq
- 
-      - name: Bump image tags + PR + squash-merge
-        env:
-          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-          TAG: ${{ needs.build.outputs.image_tag }}
+          aws eks update-kubeconfig \
+            --name ${{ vars.CLUSTER_NAME }} \
+            --region ${{ vars.AWS_REGION }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Deploy with Helm
         run: |
-          cd gitops
-          yq e -i ".backend.image.tag = \"$TAG\""  helm/myapp/values-production.yaml
-          yq e -i ".frontend.image.tag = \"$TAG\"" helm/myapp/values-production.yaml
-          git config user.email "github-actions@github.com"
-          git config user.name  "GitHub Actions"
-          BRANCH="update-image-${{ github.run_id }}"
-          git checkout -b "$BRANCH"
-          git commit -am "chore: bump images to $TAG"
-          git push origin "$BRANCH"
-          REPO="${{ github.repository_owner }}/devops-gitops"
-          PR=$(curl -sX POST -H "Authorization: Bearer $GITOPS_TOKEN" \
-            https://api.github.com/repos/$REPO/pulls \
-            -d "{\"title\":\"Update image to $TAG\",\"head\":\"$BRANCH\",\"base\":\"main\"}" \
-            | python3 -c "import sys,json;print(json.load(sys.stdin)['number'])")
-          curl -sX PUT -H "Authorization: Bearer $GITOPS_TOKEN" \
-            https://api.github.com/repos/$REPO/pulls/$PR/merge \
-            -d '{"merge_method":"squash"}'
- 
-      - name: ArgoCD sync
-        env:
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-          ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
-        run: |
-          sudo curl -sSL -o /usr/local/bin/argocd \
-            https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          sudo chmod +x /usr/local/bin/argocd
-          argocd app sync myapp --grpc-web
-          argocd app wait myapp --grpc-web --timeout 300
+          helm upgrade myapp ./helm/myapp \
+            --reuse-values \
+            --set frontend.image.tag="$IMAGE_TAG" \
+            --set backend.image.tag="$IMAGE_TAG" \
+            --wait \
+            --timeout 4m
 
   notify:
     needs: [security-scan, build, deploy]
