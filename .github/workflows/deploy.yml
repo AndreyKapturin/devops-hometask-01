@@ -72,6 +72,9 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
 
+      - name: Build Helm dependencies
+        run: helm dependency build ./helm/myapp
+
       - name: Deploy with Helm
         run: |
           helm upgrade myapp ./helm/myapp \
