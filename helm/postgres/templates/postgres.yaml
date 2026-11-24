@@ -17,7 +17,7 @@ spec:
         app: postgres
     spec:
       nodeSelector:
-        topology.kubernetes.io/zone: eu-central-1b
+        topology.kubernetes.io/zone: eu-central-1a
       securityContext:
         fsGroup: 70
         seccompProfile:
